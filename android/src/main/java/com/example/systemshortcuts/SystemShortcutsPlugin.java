@@ -12,7 +12,6 @@ import android.os.Build;
 
 import androidx.annotation.NonNull;
 
-
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -20,7 +19,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 /**
  * SystemShortcutsPlugin
@@ -65,18 +63,12 @@ public class SystemShortcutsPlugin implements FlutterPlugin, ActivityAware, Meth
         activity = null;
     }
 
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        SystemShortcutsPlugin instance = new SystemShortcutsPlugin();
-        instance.channel = new MethodChannel(registrar.messenger(), "system_shortcuts");
-        instance.activity = registrar.activity();
-        instance.channel.setMethodCallHandler(instance);
-    }
-
     @Override
     public void onMethodCall(MethodCall call, @NonNull Result result) {
+        if (activity == null) {
+            result.error("ACTIVITY_NOT_AVAILABLE", "Activity is not available.", null);
+            return;
+        }
         switch (call.method) {
             case "home":
                 home();
@@ -115,60 +107,78 @@ public class SystemShortcutsPlugin implements FlutterPlugin, ActivityAware, Meth
     }
 
     private void home() {
+        if (this.activity == null) return;
         this.activity.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME));
     }
 
     @TargetApi(Build.VERSION_CODES.ECLAIR)
     private void back() {
+        if (this.activity == null) return;
         this.activity.onBackPressed();
     }
 
     private void volDown() {
+        if (this.activity == null) return;
         AudioManager audioManager = (AudioManager) this.activity.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-        audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_PLAY_SOUND);
+        if (audioManager != null) {
+            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_PLAY_SOUND);
+        }
     }
 
     private void volUp() {
+        if (this.activity == null) return;
         AudioManager audioManager = (AudioManager) this.activity.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-        audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
+        if (audioManager != null) {
+            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
+        }
     }
 
     private void orientLandscape() {
+        if (this.activity == null) return;
         this.activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     }
 
     private void orientPortrait() {
+        if (this.activity == null) return;
         this.activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
     private void wifi() {
+        if (this.activity == null) return;
         WifiManager wifiManager = (WifiManager) this.activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        if (wifiManager.isWifiEnabled()) {
-            wifiManager.setWifiEnabled(false);
-        } else {
-            wifiManager.setWifiEnabled(true);
+        if (wifiManager != null) {
+            if (wifiManager.isWifiEnabled()) {
+                wifiManager.setWifiEnabled(false);
+            } else {
+                wifiManager.setWifiEnabled(true);
+            }
         }
     }
 
     private boolean checkWifi() {
+        if (this.activity == null) return false;
         WifiManager wifiManager = (WifiManager) this.activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        return wifiManager.isWifiEnabled();
+        return wifiManager != null && wifiManager.isWifiEnabled();
     }
 
     @TargetApi(Build.VERSION_CODES.ECLAIR)
     private void bluetooth() {
+        if (this.activity == null) return;
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mBluetoothAdapter.isEnabled()) {
-            mBluetoothAdapter.disable();
-        } else {
-            mBluetoothAdapter.enable();
+        if (mBluetoothAdapter != null) {
+            if (mBluetoothAdapter.isEnabled()) {
+                mBluetoothAdapter.disable();
+            } else {
+                mBluetoothAdapter.enable();
+            }
         }
     }
 
     @TargetApi(Build.VERSION_CODES.ECLAIR)
     private boolean checkBluetooth() {
+        if (this.activity == null) return false;
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        return mBluetoothAdapter.isEnabled();
+        return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
     }
 
 }
